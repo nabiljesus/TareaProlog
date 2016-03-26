@@ -5,32 +5,53 @@
 % @author Márquez
 % Empezaré por aqui. (javier)
 
-
-%%                 ___________:
-%%                /
-%% -- [a,b,c] ---+
-%%                \___________:
-
+dynamic(visited/1).
+%% visited(1).
 %estado es de la forma [ [base], [above], [below] ]
 %% push(_,0,,E,E):- !.
 
 % Para encontrar las solucion es necesario un predicado dinamico para almacenar
 % Estados ya visitados
+% consult('vagones.pro').
+% vagones([a,b,c],[b,c,a],X)
+
+
+steps(X,[_|T]) :-
+    steps(1,X,T).
+
+steps(N,N,_).
+steps(N,M,[_|T]):-
+    L is N+1,
+    steps(L,M,T).
 
 vagones(InitialState,FinalState,Movements):-
+    nonvar(Movements),
     move_yaldra([InitialState,[],[]],
                 [FinalState,[],[]],
                 Movements).
+vagones(InitialState,FinalState,Movements):-
+    find_vagones([InitialState,[],[]],
+                [FinalState,[],[]],
+                Movements),
+    retractall(visited(X)).
+
+find_vagones(I,I,[]).
+find_vagones(I,F,[M|Mv]):-
+    \+ visited(I),
+    asserta(visited(I)),
+    create_case(I,M),
+    move_yaldra(I,Actual,[M]),
+    %% print_yaldra(I,3),
+    print(I),
+    find_vagones(Actual,F,Mv).
 
 move_yaldra(Final,Final,[]):- !.
 move_yaldra(Actual,Final,[ M |Mvs]) :-
     M      =.. [Move,Dir,Size],
     Action =.. [Move,Dir,Size,Actual,NewActual],
     once(Action),
-    print(NewActual),nl,
-    move_yaldra(NewActual,Final,Mvs).
-
-    
+    %% print(NewActual),nl,
+    move_yaldra(NewActual,Final,Mvs),!.
 
 
 % print_yaldra([[a,b],[c],[]],3).
@@ -68,14 +89,7 @@ pop(below,N,[Base,Above,Below],F):-
     append(Base,Movement,NewBase),
     F    = [NewBase,Above,NewBelow].
     
-    
-steps(X,[_|T]) :-
-    entero(1,X,T).
 
-steps(N,N,_).
-steps(N,M,[_|T]):-
-    L is N+1,
-    entero(L,M,T).
 
 create_case([Base,Above,Below],Movement) :-
     member(Pos,[base,above,below]),
