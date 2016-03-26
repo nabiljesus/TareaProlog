@@ -27,3 +27,27 @@ my_reverse(L2,L) :- my_reverse_aux(L2,[],L).
 
 my_reverse_aux([],L,L).
 my_reverse_aux([H|T],L,L2) :- my_reverse_aux(T,[H|L],L2).
+
+divisores(N,L) :- calc_divisores(N,1,L).
+calc_divisores(N,N,[N]).
+calc_divisores(N,C,[H|T]):- N > C,
+                            C1 is C +1,
+                            ( 0 =:= N mod C -> 
+                                H = C,
+                                calc_divisores(N,C1,T)
+                              ;
+                              calc_divisores(N,C1,[H|T])),!.
+
+natural(1).
+natural(N):- natural(N1), N is N1 +1.
+
+perfecto(N):-
+    nonvar(N),
+    divisores(N,LDiv),
+    sum_list(LDiv,Sum),
+    N =:= Sum - N,!.
+
+perfecto(N):-
+    natural(N1),
+    perfecto(N1),
+    N = N1.
