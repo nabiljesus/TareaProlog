@@ -30,15 +30,19 @@ move_yaldra(Actual,Final,[ M |Mvs]) :-
     print(NewActual),nl,
     move_yaldra(NewActual,Final,Mvs).
 
+    
+
+
+% print_yaldra([[a,b],[c],[]],3).
 print_yaldra([Base,Above,Below],MaxWag) :-
     Size is MaxWag * 2-1+2+2+2+3+1,number_atom(Size,N),
     atom_concat('~',N,X),atom_concat(X,'c',Z),format(Z,[32]),
-    print(' __'), ( Above \= [] -> print(Above); true -> format("~7c",[95])),nl,
+    print(' __ '), ( Above \= [] -> print(Above); true -> format("~7c",[95])),nl,
     atom_concat('~',N,X), atom_concat(X,'c',Z),format(Z,[32]),
     print(/), nl,
     format("-- ~p ---+",[Base]),nl,
     atom_concat('~',N,X),atom_concat(X,'c',Z),format(Z,[32]),
-    print('\__'), ( Below \= [] -> print(Below); true -> format("~7c",[95])),nl.
+    print('\\__ '), ( Below \= [] -> print(Below); true -> format("~7c",[95])),nl.
 
 push(Dir,N,[Base,Above,Below],F) :-
     length(Movement,N),
@@ -64,7 +68,28 @@ pop(below,N,[Base,Above,Below],F):-
     append(Base,Movement,NewBase),
     F    = [NewBase,Above,NewBelow].
     
-%% push(below,N,[[H|T],A,B],F) :-
-%%     N1 is N-1, 
-%%     push(above,N1,[T,A,[H|B]],F),!.
+    
+steps(X,[_|T]) :-
+    entero(1,X,T).
 
+steps(N,N,_).
+steps(N,M,[_|T]):-
+    L is N+1,
+    entero(L,M,T).
+
+create_case([Base,Above,Below],Movement) :-
+    member(Pos,[base,above,below]),
+    (
+        Pos = base ->
+            member(Dir,[above,below]),
+            steps(N,Base),
+            Movement = push(Dir,N)
+        ;
+        Pos = above -> 
+            steps(N,Above),
+            Movement = pop(above,N)
+        ;
+        Pos = below -> 
+            steps(N,Below),
+            Movement = pop(below,N)
+    ).
