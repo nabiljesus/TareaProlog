@@ -51,3 +51,48 @@ perfecto(N):-
     natural(N1),
     perfecto(N1),
     N = N1.
+
+universal(F,[Name|T]):-
+    nonvar(F),
+    functor(F,Name,NArgs),
+    length(T,NArgs),
+    fill(F,T,1,NArgs),!.
+universal(F,[Name|Args]):-
+    var(F),
+    length(Args,NArgs),
+    functor(F,Name,NArgs),
+    fill(F,Args,1,NArgs),!.
+
+fill(_,[],N,Max):- N =:= Max+1.
+fill(F,[H|Tl],N,Max):- 
+    arg(N,F,H),
+    N1 is N+1,
+    fill(F,Tl,N1,Max).
+
+
+
+get_argumento(1,[Res|_],Res):- ! .
+get_argumento(N,[_|T],Res):-
+    N1 is N-1,
+    get_argumento(N1,T,Res).
+
+longitud([],0),!.
+longitud([_|T],N) :- longitud(T,N1), N is N1+1,!.
+
+underScoreList(0,[]).
+underScoreList(N,[_|T]):-
+    N1 is N-1,
+    underScoreList(N1,T).
+
+argumento(N,F,Val) :-
+    F =.. [Name|Args],
+    get_argumento(N,Args,Val),!.
+
+estructura(Functor,Name,Nargs):- 
+    nonvar(Functor),
+    Functor =.. [Name|Tail],
+    longitud(Tail,Nargs),!.
+estructura(Functor,Name,NArgs):-
+    var(Functor),
+    underScoreList(NArgs,L),
+    Functor =.. [Name|L],!.

@@ -3,55 +3,68 @@
 %
 % @author López Javier
 % @author Márquez
-% Empezaré por aqui. (javier)
 
-dynamic(visited/1).
+:- dynamic(visited/1).
 %% visited(1).
 %estado es de la forma [ [base], [above], [below] ]
 %% push(_,0,,E,E):- !.
 
 % Para encontrar las solucion es necesario un predicado dinamico para almacenar
 % Estados ya visitados
-% consult('vagones.pro').
-% vagones([a,b,c],[b,c,a],X)
+% consult('vagones.pro'),vagones([a,c],[c,a],X).
 
 
-steps(X,[_|T]) :-
-    steps(1,X,T).
-
-steps(N,N,_).
-steps(N,M,[_|T]):-
-    L is N+1,
-    steps(L,M,T).
 
 vagones(InitialState,FinalState,Movements):-
     nonvar(Movements),
     move_yaldra([InitialState,[],[]],
                 [FinalState,[],[]],
-                Movements).
+                Movements,yes),!.
 vagones(InitialState,FinalState,Movements):-
-    find_vagones([InitialState,[],[]],
-                [FinalState,[],[]],
-                Movements),
-    retractall(visited(X)).
+    findall(Moves,
+            find_vagones([InitialState,[],[]],
+                        [FinalState,[],[]],
+                        Moves),
+            [First|AllMoves]),
+    %% print([First|AllMoves]),
+    length(First,Lf),
+    smallest_list(First,Lf,AllMoves,Movements),
+    vagones(InitialState,FinalState,Movements),
+    retractall(visited(X)),!.
+
+smallest_list(Smallest,_,[],Smallest).
+smallest_list(Sm,Size,[Next|Tl],Ns):-
+    length(Next,Nl),
+    (
+        Nl >= Size ->
+            smallest_list(Sm,Size,Tl,Ns)
+        ;
+        smallest_list(Next,Nl,Tl,Ns)
+    ),!.
+
+steps(X,[_|T]) :-
+    steps(1,X,T).
+steps(N,N,_).
+steps(N,M,[_|T]):-
+    L is N+1,
+    steps(L,M,T).
 
 find_vagones(I,I,[]).
 find_vagones(I,F,[M|Mv]):-
     \+ visited(I),
-    asserta(visited(I)),
+    assertz(visited(I)),
     create_case(I,M),
-    move_yaldra(I,Actual,[M]),
-    %% print_yaldra(I,3),
-    print(I),
+    move_yaldra(I,Actual,[M],no),
     find_vagones(Actual,F,Mv).
 
-move_yaldra(Final,Final,[]):- !.
-move_yaldra(Actual,Final,[ M |Mvs]) :-
+move_yaldra(Final,Final,[],yes):- print_yaldra(Final,3), !.
+move_yaldra(Final,Final,[],_)  :- !.
+move_yaldra(Actual,Final,[ M |Mvs],Print) :-
     M      =.. [Move,Dir,Size],
     Action =.. [Move,Dir,Size,Actual,NewActual],
     once(Action),
-    %% print(NewActual),nl,
-    move_yaldra(NewActual,Final,Mvs),!.
+    ( Print = yes -> print_yaldra(Actual,3);true),
+    move_yaldra(NewActual,Final,Mvs,Print),!.
 
 
 % print_yaldra([[a,b],[c],[]],3).
@@ -90,15 +103,9 @@ pop(below,N,[Base,Above,Below],F):-
     F    = [NewBase,Above,NewBelow].
     
 
-
 create_case([Base,Above,Below],Movement) :-
     member(Pos,[base,above,below]),
     (
-        Pos = base ->
-            member(Dir,[above,below]),
-            steps(N,Base),
-            Movement = push(Dir,N)
-        ;
         Pos = above -> 
             steps(N,Above),
             Movement = pop(above,N)
@@ -106,4 +113,9 @@ create_case([Base,Above,Below],Movement) :-
         Pos = below -> 
             steps(N,Below),
             Movement = pop(below,N)
+        ;
+        Pos = base ->
+            member(Dir,[above,below]),
+            steps(N,Base),
+            Movement = push(Dir,N)
     ).
