@@ -94,17 +94,34 @@ find_vagones(I,F,[M|Mv]):-
     move_yaldra(I,Actual,[M],no),
     find_vagones(Actual,F,Mv).
 
+%% move_yaldra(+Actual:list,+Final:list,+Mvs:list,?Print:atom)
+%  
+% Predicado que realiza los movimientos de la lista Mvs, sobre el 
+% estado actual hasta llegar al estado Final. Los estados intermedios
+% se imprimen si Print unifica con yes
+%
+% @param A       Estado Actual
+% @param F       Estado Final después de los movimientos [Mv|Mvs]
+% @param Print   Indica si el recorrido debe ser impreso
+
 move_yaldra(Final,Final,[],yes):- print_yaldra(Final,3), !.
 move_yaldra(Final,Final,[],_)  :- !.
 move_yaldra(Actual,Final,[ M |Mvs],Print) :-
     M      =.. [Move,Dir,Size],
     Action =.. [Move,Dir,Size,Actual,NewActual],
     once(Action),
-    ( Print = yes -> print_yaldra(Actual,3);true),
+    ( Print = yes -> print_yaldra(Actual,3) ; true),
     move_yaldra(NewActual,Final,Mvs,Print),!.
 
+%% move_yaldra(+Estado:list,+MaxWag:int)
+%  
+% Predicado que imprime Estado en un formato espec`ifico, en donde
+% MaxWag es el entero indicando la cantidad m`axima de elementos
+% que puede haber en un vag`on cualquiera de Estado.
+%
+% @param Estado    Estado a imprimir
+% @param MaxWag    Cantidad ma`xima de vagones
 
-% print_yaldra([[a,b],[c],[]],3).
 print_yaldra([Base,Above,Below],MaxWag) :-
     Size is MaxWag * 2 + 9 ,number_atom(Size,N), % -1+2+2+2+3+1
     atom_concat('~',N,X),atom_concat(X,'c',Z),format(Z,[32]),
@@ -114,6 +131,59 @@ print_yaldra([Base,Above,Below],MaxWag) :-
     format("-- ~p ---+",[Base]),nl,
     atom_concat('~',N,X),atom_concat(X,'c',Z),format(Z,[32]),
     print('\\__ '), ( Below \= [] -> print(Below); true -> format("~7c",[95])),nl.
+
+% version ineficiente y fallida
+print_yaldra([Base,Above,Below]) :-
+    length(Base,BaseLen),
+    length(Above,AboveLen),
+    length(Below,BelowLen),
+    MaxY     is max(AboveLen,BelowLen),
+    AboveDif is (MaxY - AboveLen),
+    BelowLen is (MaxY - BelowLen),
+    Size     is BaseLen * 2 + 9 ,
+    print_n(Size,32),
+    print(' __'),
+    ( 
+        Above \= [] 
+    ->
+        print(1,32),
+        print(Above), %*2 -1+2+2
+        print(1,32)
+    ;
+        true
+    ),print(AboveDif,95),print(':'),nl,
+    print_n(Size,32),
+    print(/), nl,
+    format("-- ~p ---+",[Base]),nl,
+    print_n(Size,32),
+    print('\\__'), 
+    ( 
+        Below \= [] 
+    -> 
+        print(1,32),
+        print(Below),
+        print(1,32)
+    ;   
+        true
+    ),print(AboveDif,95),print(':'),nl.
+
+%print_n(0,_).
+print_n(Int,Char) :-
+    number_atom(Int,N), % -1+2+2+2+3+1
+    atom_concat('~',N,X),
+    atom_concat(X,'c',Z),
+    format(Z,[Char]).
+
+%% push(+Dir:atom,+N:int,+Init:list,?F:list)
+%  
+% Predicado que realiza el movimiento push. Se mueven N vagones 
+% desde la base hasta Dir (above o below), pasando del estado 
+% Init al F
+%
+% @param Dir     Dir hacia donde realizar el movimiento
+% @param N       Cantidad de vagones a mover
+% @param Init    Estado inicial
+% @param F       Estado Final
 
 push(Dir,N,[Base,Above,Below],F) :-
     length(Movement,N),
@@ -128,7 +198,18 @@ push(Dir,N,[Base,Above,Below],F) :-
     ->
         append(Movement,Below,NewBelow),
         F = [NewBase,Above,NewBelow]
-    ),!. % Step tal vez sea inútil, no se
+    ),!. 
+
+%% pop(+Dir:atom,+N:int,+Init:list,?F:list)
+%  
+% Predicado que realiza el movimiento pop. Se mueven N vagones 
+% desde Dir (above o below) hasta Base, pasando del estado 
+% Init al F
+%
+% @param Dir     Dir desde el cual se mover`an vagones
+% @param N       Cantidad de vagones a mover
+% @param Init    Estado inicial
+% @param F       Estado Final
 
 pop(above,N,[Base,Above,Below],F):-
     length(Movement,N),
@@ -142,6 +223,15 @@ pop(below,N,[Base,Above,Below],F):-
     append(Base,Movement,NewBase),
     F    = [NewBase,Above,NewBelow].
     
+
+%% create_case(+Estado:list,?Movement:list)
+%  
+% Predicado que indica todos los posibles movimientos en Movement,
+% que se pueden realizar desde Estado. Los resultados son entregados
+% uno a uno por backtracking (generate).
+%
+% @param Estado     Estado de los vagones
+% @param Movement   Posibles movimientos a realizar
 
 create_case([Base,Above,Below],Movement) :-
     member(Pos,[base,above,below]),
