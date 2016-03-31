@@ -108,7 +108,7 @@ select_n(Teams,L,All):-
     ->
         Team @< Last
     ;
-        true
+        print('Voy aca menol'),nl
     ),
     format('~p paso!!',[Team]),nl,
     select_n(RestOfTeams,[Team|L],All).
