@@ -96,10 +96,20 @@ byes(Rests) :-
     select_n(Teams,[],Rests).
 byes.
 
+
 select_n([],[],[]).
-select_n(Teams,[A,B,C,D],[[A,B,C,D]|All]):-
-    select_n(Teams,[],All). 
+select_n([Teams],[A,B,C,D],[[A,B,C,D]|All]):-
+    select_n(Teams,[],All).  
 select_n(Teams,L,All):- 
     select(Team,Teams,RestOfTeams),
-    select_n(RestOfTeams,[Team|L],All). 
+    format('Estoy seleccionando ~p',[Team]),nl,
+    (
+        L = [Last|_]
+    ->
+        Team @< Last
+    ;
+        true
+    ),
+    format('~p paso!!',[Team]),nl,
+    select_n(RestOfTeams,[Team|L],All).
 
