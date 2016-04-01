@@ -8,6 +8,10 @@
 
 played(caracasfc,deportivotachira).
 
+retract2(X)       :- X, reallyRetract2(X).
+reallyRetract2(X) :- retract(X).
+reallyRetract2(X) :- asserta(X), fail.
+
 % American Football Conference standings
 standings(afc,east,1,patriots).
 standings(afc,east,2,jets).
@@ -187,12 +191,9 @@ schedule :-
     make_structure(Matches),
     %% assign(Matches),
     findall(Team,standings(_,_,_,Team),Teams),!,
-    (
-        dynamic_assign(Matches,Teams,Teams),!
-    ;
-        retractall(played(X,Y))
-    ),
+    dynamic_assign(Matches,Teams,Teams),
     check_schedule(Matches,B),
+    %% retractall(played(X,Y)),
     (schedule(1,Matches,B),!;true).
 
 dynamic_assign([],Teams,Teams).
@@ -202,7 +203,8 @@ dynamic_assign([[Match1|RestOfWeek]|Weeks],Teams,Teams) :-
     member(Home,Teams),
     member(Visitor,Teams),
     Home \= Visitor,
-    \+ played(Home,Visitor),assertz(played(Home,Visitor)),
+    \+ played(Home,Visitor),
+    reallyRetract2(played(Home,Visitor)),
     Match1 = [Home,Visitor],
     dynamic_assign([RestOfWeek|Weeks],Teams,Teams).
 
