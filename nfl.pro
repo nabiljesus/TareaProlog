@@ -4,8 +4,8 @@
 % @author López Javier
 % @author Márquez
 
-:- dynamic(contador/1).
-contador(1).
+:- dynamic(needed/1).
+
 
 % American Football Conference standings
 standings(afc,east,1,patriots).
@@ -181,7 +181,21 @@ make_structure([WithoutByes|Rest],N):-
 schedule :- 
     byes(B),
     make_structure(Matches),
+    assign(Matches),
+    check_schedule(Matches,B),
     schedule(1,Matches,B).
+
+check_schedule([],[]).
+check_schedule([M|Ms],[B|Bs]):-
+    sleepers_will_sleep(M,B).
+
+sleepers_will_sleep([],[Tm1,Tm2,Tm3,Tm4]).
+sleepers_will_sleep([Match|Ms],[Tm1,Tm2,Tm3,Tm4]):-
+    \+ member(Tm1,Match),
+    \+ member(Tm2,Match),
+    \+ member(Tm3,Match),
+    \+ member(Tm4,Match),
+    sleepers_will_sleep(Ms,[Tm1,Tm2,Tm3,Tm4]).
 
 schedule(N,[],[]).
 schedule(N,[Match|Matches],[]).
@@ -192,3 +206,41 @@ schedule(N,[Match|Matches],[Byes|NextByes]):-
     byes_print(Byes),
     N1 is N+1,
     schedule(N1,NextByes).
+
+needed_matches([],[]).
+needed_matches([Tm|Tms], [FinalGames |
+                         [InterGames | 
+                         [IntraGames | 
+                         [DivionalGames | 
+                         [Matches]]]]] ):-
+    findall(X,divisional(vikings,X),DvGm),
+    flatten(DvGm,DivionalGames),!, % Solo una forma de hacer los divisionales
+    intragames(Tm,IntraGames),
+    intergames(Tm,InterGames),
+    finalgames(Tm,FinalGames),
+    needed_matches(Tms,TmsGames).
+    %append(TmGames,TmsGames,Matches).
+
+% assignacion recursiva de partidos
+assign(Calendar_structure):-
+    findall(Team,standings(_,_,_,Team),Teams),!,
+    needed_matches(Teams,Matches),%!, % Los equipos y los juegos necesarios no cambiaran
+    assign(Matches,Calendar_structure).
+
+    % Se podria revisar aqui mismo los byes?
+
+
+assign([],Calendar).
+assign([Match|Ms],Calendar):-
+    big_member(Matches,Calendar_structure),
+    assign(Ms,Calendar).
+
+% Es miembro de una semana, o de las siguientes
+big_member(Game,[Week|_]):-
+    member(Game,Week).
+big_member(Game,[_|Weeks]):-
+    big_member(Game,Weeks).
+
+flatten([],[]).
+flatten([[[A,B],[C,D]]|Elements],[[A,B],[C,D]|Flatted]):-
+    flatten(Elements,Flatted).
