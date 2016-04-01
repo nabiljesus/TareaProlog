@@ -29,12 +29,15 @@ vagones(InitialState,FinalState,Movements):-
     findall(Moves,
             find_vagones([InitialState,[],[]],
                         [FinalState,[],[]],
-                        Moves),
+                        Moves,
+                        []),
             [First|AllMoves]),
     length(First,Lf),
     smallest_list(First,Lf,AllMoves,Movements),
-    vagones(InitialState,FinalState,Movements),
-    retractall(visited(X)),!.
+    print('DADADA'),nl,
+    print(AllMoves),nl,
+    print('DADADADA'),nl.
+    %retractall(visited(X)),!.
 
 %% smallest_list(+Small:list,+SmallSize:int,+Iterable:list,?Smallest:list)
 %  
@@ -86,13 +89,29 @@ steps(N,M,[_|T]):-
 % @param Mvs     Lista de movimientos realizados, el primer movimiento a la 
 %                cabeza es el necesario para ir del estado I al F
 
-find_vagones(I,I,[]).
-find_vagones(I,F,[M|Mv]):-
-    \+ visited(I),
-    assertz(visited(I)),
+find_vagones(I,I,[],_V).
+find_vagones(I,F,[M|Mv],V):-
+    %% \+ visited(I),
+    %% (
+    %%     assertz(visited(I))
+    %% ;
+    %%     retract(visited(I))
+    %% ),
+    print('Desde: '),
+    print(I), nl,
+    (   member(I,V)
+
+        ->
+        print('BACKTRACKING, BIACH.')
+        ;
+        true
+        ),
+    \+ member(I,V),nl,
     create_case(I,M),
     move_yaldra(I,Actual,[M],no),
-    find_vagones(Actual,F,Mv).
+    print('Voy A :'),
+    print(M), nl,
+    find_vagones(Actual,F,Mv,[I|V]).
 
 %% move_yaldra(+Actual:list,+Final:list,+Mvs:list,?Print:atom)
 %  
