@@ -27,9 +27,10 @@ vagones(InitialState,FinalState,Movements):-
                 Movements,yes),!.
 vagones(InitialState,FinalState,Movements):-
     findall(Moves,
-            find_vagones([InitialState,[],[]],
+            find_vagones2([InitialState,[],[]],
                         [FinalState,[],[]],
                         Moves,
+                        [],
                         []),
             [First|AllMoves]),
     length(First,Lf),
@@ -112,6 +113,34 @@ find_vagones(I,F,[M|Mv],V):-
     print('Voy A :'),
     print(M), nl,
     find_vagones(Actual,F,Mv,[I|V]).
+
+find_vagones2(I,I,[I|Mv],_V,Queue).
+find_vagones2(I,F,[M|Mv],V,Queue):-
+    %% \+ visited(I),
+    %% (
+    %%     assertz(visited(I))
+    %% ;
+    %%     retract(visited(I))
+
+    print('Desde: '),
+    print(I), nl,
+    (   member(I,V)
+
+        ->
+        print('BACKTRACKING, BIACH.')
+        ;
+        true
+        ),
+    \+ member(I,V),nl,
+    create_case(I,M),
+    move_yaldra(I,Actual,[M],no),
+    print('Voy A :'),
+    print(M), nl,
+    print(I), nl,
+    find_vagones2(Actual,F,Mv,[I|V]).
+
+unshift([],E):- false.
+unshift([L|LL],E):- L = E.
 
 %% move_yaldra(+Actual:list,+Final:list,+Mvs:list,?Print:atom)
 %  
