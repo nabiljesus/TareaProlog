@@ -66,6 +66,7 @@ divisional(Home,[[Home,Visitor],[Visitor,Home]]) :-
     standings(Conf,Area,_,Visitor),
     Home \= Visitor.
 
+% Juegos intra conferencia
 intragames(T,L):-
     standings(Conf,Card,_,T),
     (
@@ -85,6 +86,7 @@ intragames(T,L):-
 
     L = [[T,Visitor1],[T,Visitor2],[Home1,T],[Home2,T]].
 
+% Juegos Inter-conferencia
 intergames(T,L):-
     standings(Conf,TArea,_,T),
     (
@@ -109,6 +111,7 @@ intergames(T,L):-
 
     L = [[T,Visitor1],[T,Visitor2],[Home1,T],[Home2,T]].
 
+% Juegos de conferencia con equipos de la misma posicion
 finalgames(T,L):-
     standings(Conf,Cord,Position,T),
     (
@@ -130,7 +133,7 @@ finalgames(T,L):-
 
     L = [[T,Visitor],[Home,T]].
 
-
+% Selecciona 8 listas con grupos de 4 equipos no repetidos
 select_n([],[],[]).
 select_n(Teams,[A,B,C,D],[[A,B,C,D]|All]):-
     select_n(Teams,[],All).  
@@ -145,20 +148,22 @@ select_n(Teams,L,All):-
     ),
     select_n(RestOfTeams,[Team|L],All).
 
+% Indica todas las disposiciones de equipos que descansaran en las primeras 8 semanas
 byes(Result) :- 
     findall(Team,standings(_,_,_,Team),Teams), !,
     select_n(Teams,[],Rests),
     reverse(Rests,Result).
 
+% Impresion de byes en formato dado
 byes_print([Team])       :- print(Team),nl.
 byes_print([Team|Teams]) :- format('~p, ',[Team]), byes_print(Teams).
 
 match_print(Teams)       :- format('~p at ~p',Teams).
 
+% Creador de la estructura de un calendario
 make_structure(Struct):-
     length(Struct,17),
     make_structure(Struct,1).
-
 make_structure([],18):- !.  
 make_structure([WithByes|Rest],N):-
     N < 9,
@@ -172,7 +177,7 @@ make_structure([WithoutByes|Rest],N):-
     N1 is N+1,
     make_structure(Rest,N1),!.
 
-
+% Predicado principal
 schedule :- 
     byes(B),
     make_structure(Matches),
