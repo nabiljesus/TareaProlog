@@ -54,46 +54,86 @@ standings(nfc,south,4,buccaneers).
 intra(north,east).
 intra(south,west).
 
+% Inter-conference
+inter(east,west).
+inter(north,east).
+inter(south,north).
+inter(west,south).
+
 % Todos los juegos divisionales
-divisional(Home,Visitor) :-
+divisional(Home,[[Home,Visitor],[Visitor,Home]]) :-
     standings(Conf,Area,_,Home),
     standings(Conf,Area,_,Visitor),
-    Home1 \= Visitor.
+    Home \= Visitor.
 
-% Juegos intra division misma conferencia
-intragames(L):- % De aquí ya salen 3808 combinaciones, pero un partido puede salir de pos 1 o 2
-    intra(Card1,Card2),
-    member(Conf,[afc,nfc]),
+% Juegos intra conferencia
+intragames(T,L):-
+    standings(Conf,Card,_,T),
+    (
+        intra(Card,OpCard)
+    ; 
+        intra(OpCard,Card)
+    ),
 
-    findall(FirstConfTeam,standings(Conf,Card1,_,FirstConfTeam),FstConfTms),
-    findall(SecondConfTm ,standings(Conf,Card2,_,SecondConfTm) ,SndConfTms),
+    findall(OpTeam ,standings(Conf,OpCard,_,OpTeam) ,Oponents),!,
 
-    select(Home1,FstConfTms,RestOfFirst), % Pensando en que no se pueden repetir
-    select(Home2,RestOfFirst,_),
+    select(Home1,Oponents,Oponents1), 
+    select(Home2,Oponents1,Oponents2),
+    select(Visitor1,Oponents2,[Visitor2]),
+    % Evitamos permutaciones entre partidos 1,2 y 3,4
+    Home1    @> Home2,
+    Visitor1 @> Visitor2,
+
+    L = [[T,Visitor1],[T,Visitor2],[Home1,T],[Home2,T]].
+
+% Juegos Inter-conferencia
+intergames(T,L):-
+    standings(Conf,TArea,_,T),
+    (
+        Conf = afc
+    ->
+        OConf = nfc,
+        inter(TArea,OArea)
+    ;
+        Conf = nfc
+    ->
+        OConf = afc,
+        inter(TArea,OArea)
+    ),
+    findall(OpTeam ,standings(OConf,OArea,_,OpTeam) ,Oponents),!,
+
+    select(Home1,Oponents,Oponents1), 
+    select(Home2,Oponents1,Oponents2),
+    select(Visitor1,Oponents2,[Visitor2]),
     
-    select(Visitor1,SndConfTms,RestOfSecond),
-    select(Visitor2,RestOfSecond,_),
+    Home1    @> Home2,
+    Visitor1 @> Visitor2,
 
-    L = [ [Home1,Visitor1],[Home2,Visitor2] ].
+    L = [[T,Visitor1],[T,Visitor2],[Home1,T],[Home2,T]].
 
-positional(L) :-
+% Juegos de conferencia con equipos de la misma posicion
+finalgames(T,L):-
+    standings(Conf,Cord,Position,T),
+    (
+        intra(Cord,OpCord)
+    ; 
+        intra(OpCord,Cord)
+    ),
 
-    select(Area1,[north,east,west,south],RestOfFirst), % Pensando en que no se pueden repetir
-    select(Area2,RestOfFirst,_),
-    % Revisar que no esta ya en intragames
+    findall(OpTeam ,standings(Conf,_,Position,OpTeam) ,Oponents),!,
 
-    findall(FirstConfTeam,standings(Conf,Area1,Pos,FirstConfTeam),FstConfTms),
-    findall(SecondConfTm ,standings(Conf,Area2,Pos,SecondConfTm) ,SndConfTms),
+    select(Home,Oponents,Oponents1),
+    standings(_,Cord1,_,Home), 
+    Cord   \= Cord1,
+    OpCord \= Cord1,
+    select(Visitor,Oponents1,_),
+    standings(_,Cord2,_,Visitor),
+    Cord   \= Cord2,
+    OpCord \= Cord2,
 
-    select(Home1,FstConfTms,RestOfFirst), % Pensando en que no se pueden repetir
-    select(Home2,RestOfFirst,_),
-    
-    select(Visitor1,SndConfTms,RestOfSecond),
-    select(Visitor2,RestOfSecond,_),
+    L = [[T,Visitor],[Home,T]].
 
-    L = [ [Home1,Visitor1],[Home2,Visitor2] ].    
-
-
+% Selecciona 8 listas con grupos de 4 equipos no repetidos
 select_n([],[],[]).
 select_n(Teams,[A,B,C,D],[[A,B,C,D]|All]):-
     select_n(Teams,[],All).  
@@ -107,24 +147,45 @@ select_n(Teams,L,All):-
         true
     ),
     select_n(RestOfTeams,[Team|L],All).
-    
+
+% Indica todas las disposiciones de equipos que descansaran en las primeras 8 semanas
 byes(Result) :- 
     findall(Team,standings(_,_,_,Team),Teams), !,
     select_n(Teams,[],Rests),
     reverse(Rests,Result).
 
-byes_print([Team]):-
-    print(Team),nl.
-byes_print([Team|Teams]):-
-    format('~p, ',[Team]),
-    byes_print(Teams).
+% Impresion de byes en formato dado
+byes_print([Team])       :- print(Team),nl.
+byes_print([Team|Teams]) :- format('~p, ',[Team]), byes_print(Teams).
 
-schedule :-
+match_print(Teams)       :- format('~p at ~p',Teams).
+
+% Creador de la estructura de un calendario
+make_structure(Struct):-
+    length(Struct,17),
+    make_structure(Struct,1).
+make_structure([],18):- !.  
+make_structure([WithByes|Rest],N):-
+    N < 9,
+    length(WithByes,14),
+    N1 is N+1,
+    make_structure(Rest,N1),!.
+make_structure([WithoutByes|Rest],N):-
+    8 < N,   
+    N < 18,
+    length(WithoutByes,16),
+    N1 is N+1,
+    make_structure(Rest,N1),!.
+
+% Predicado principal
+schedule :- 
     byes(B),
-    schedule(1,B).
+    make_structure(Matches),
+    schedule(1,Matches,B).
 
-schedule(N,[]).
-schedule(N,[Byes|NextByes]):-
+schedule(N,[],[]).
+schedule(N,[Match|Matches],[]).
+schedule(N,[Match|Matches],[Byes|NextByes]):-
     format('WEEK ~p',[N]),nl,
     print( '------'),nl,
     print('Byes: '),
