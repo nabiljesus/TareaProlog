@@ -4,8 +4,9 @@
 % @author López Javier
 % @author Márquez
 
-:- dynamic(needed/1).
+:- dynamic(played/2).
 
+played(caracasfc,deportivotachira).
 
 % American Football Conference standings
 standings(afc,east,1,patriots).
@@ -155,10 +156,13 @@ byes(Result) :-
     reverse(Rests,Result).
 
 % Impresion de byes en formato dado
-byes_print([Team])       :- print(Team),nl.
-byes_print([Team|Teams]) :- format('~p, ',[Team]), byes_print(Teams).
+byes_print([Team])          :- print(Team),nl.
+byes_print([Team|Teams])    :- format('~p, ',[Team]), byes_print(Teams).
 
-match_print(Teams)       :- format('~p at ~p',Teams).
+week_print([]).
+week_print([Match|Matches]) :- match_print(Match),nl, week_print(Matches).
+
+match_print(Teams)          :- format('~p at ~p',Teams).
 
 % Creador de la estructura de un calendario
 make_structure(Struct):-
@@ -181,9 +185,27 @@ make_structure([WithoutByes|Rest],N):-
 schedule :- 
     byes(B),
     make_structure(Matches),
-    assign(Matches),
+    %% assign(Matches),
+    findall(Team,standings(_,_,_,Team),Teams),!,
+    (
+        dynamic_assign(Matches,Teams,Teams),!
+    ;
+        retractall(played(X,Y))
+    ),
     check_schedule(Matches,B),
-    schedule(1,Matches,B).
+    (schedule(1,Matches,B),!;true).
+
+dynamic_assign([],Teams,Teams).
+dynamic_assign([[]|Weeks],Teams,Teams) :-
+    dynamic_assign(Weeks,Teams,Teams).
+dynamic_assign([[Match1|RestOfWeek]|Weeks],Teams,Teams) :-
+    member(Home,Teams),
+    member(Visitor,Teams),
+    Home \= Visitor,
+    \+ played(Home,Visitor),assertz(played(Home,Visitor)),
+    Match1 = [Home,Visitor],
+    dynamic_assign([RestOfWeek|Weeks],Teams,Teams).
+
 
 check_schedule([],[]).
 check_schedule([M|Ms],[B|Bs]):-
@@ -197,15 +219,23 @@ sleepers_will_sleep([Match|Ms],[Tm1,Tm2,Tm3,Tm4]):-
     \+ member(Tm4,Match),
     sleepers_will_sleep(Ms,[Tm1,Tm2,Tm3,Tm4]).
 
-schedule(N,[],[]).
-schedule(N,[Match|Matches],[]).
-schedule(N,[Match|Matches],[Byes|NextByes]):-
+schedule(N,[],[]):- ! .
+schedule(N,[Week|Weeks],[]):-
     format('WEEK ~p',[N]),nl,
     print( '------'),nl,
-    print('Byes: '),
-    byes_print(Byes),
+    week_print(Week),nl,
     N1 is N+1,
-    schedule(N1,NextByes).
+    schedule(N1,Weeks,NextByes),!.
+schedule(N,[Week|Weeks],[Byes|NextByes]):-
+    format('WEEK ~p',[N]),nl,
+    print( '------'),nl,
+    week_print(Week),nl,
+    print('Byes: '),
+    byes_print(Byes),nl,
+    N1 is N+1,
+    schedule(N1,Weeks,NextByes),!.
+
+
 
 needed_matches([],[]).
 needed_matches([Tm|Tms], [FinalGames |
