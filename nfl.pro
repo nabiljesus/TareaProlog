@@ -279,7 +279,6 @@ schedule :-
 % @param   Teams        lista con todos los equipos
 % @param   Visted       lista con los partido ya agregados
 
-
 assign_random_matches([],Teams,Visited).
 assign_random_matches([[]|Weeks],Teams,Visited) :-
     assign_random_matches(Weeks,Teams,Visited).
@@ -292,10 +291,19 @@ assign_random_matches([[Match1|RestOfWeek]|Weeks],Teams,Visited) :-
     assign_random_matches([RestOfWeek|Weeks],Teams,[Match1|Visited]).
 
 
-
+%% check_byes(+Calendar:list,+Teams:list,+Visited:list)
+%  
+% Predicado que triunfa cuando todos los juegos de Calendar unifican con 
+% algun partidos, estos partidos no se repiten y deben estar conpuestos de
+% dos equipos diferentes. 
+%
+% @param   Calendar     estructura de un calendario
+% @param   Teams        lista con todos los equipos
+% @param   Visted       lista con los partido ya agregados
 check_byes([],[]).
 check_byes([M|Ms],[B|Bs]):-
-    sleepers_will_sleep(M,B).
+    sleepers_will_sleep(M,B),
+    check_byes(Ms,Bs).
 
 sleepers_will_sleep([],[Tm1,Tm2,Tm3,Tm4]).
 sleepers_will_sleep([Match|Ms],[Tm1,Tm2,Tm3,Tm4]):-
