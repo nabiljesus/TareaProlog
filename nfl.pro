@@ -54,33 +54,17 @@ standings(nfc,south,4,buccaneers).
 intra(north,east).
 intra(south,west).
 
+% Inter-conference
+inter(east,west).
+inter(north,east).
+inter(south,north).
+inter(west,south).
+
 % Todos los juegos divisionales
 divisional(Home,[[Home,Visitor],[Visitor,Home]]) :-
     standings(Conf,Area,_,Home),
     standings(Conf,Area,_,Visitor),
     Home \= Visitor.
-
-%% divisional(Home,Visitor) :-
-%%     standings(Conf,Area,_,Home),
-%%     findall(Team,standings(Conf,Area,_,Team),[Teams),
-
-%%     Home1 \= Visitor.
-
-% Juegos intra division misma conferencia
-%% intragames(L):- % De aquí ya salen 3808 combinaciones, pero un partido puede salir de pos 1 o 2
-%%     intra(Card1,Card2),
-%%     member(Conf,[afc,nfc]),
-
-%%     findall(FirstConfTeam,standings(Conf,Card1,_,FirstConfTeam),FstConfTms),
-%%     findall(SecondConfTm ,standings(Conf,Card2,_,SecondConfTm) ,SndConfTms),
-
-%%     select(Home1,FstConfTms,RestOfFirst), % Pensando en que no se pueden repetir
-%%     select(Home2,RestOfFirst,_),
-    
-%%     select(Visitor1,SndConfTms,RestOfSecond),
-%%     select(Visitor2,RestOfSecond,_),
-
-%%     L = [ [Home1,Visitor1],[Home2,Visitor2] ].
 
 intragames(T,L):-
     standings(Conf,Card,_,T),
@@ -90,33 +74,61 @@ intragames(T,L):-
         intra(OpCard,Card)
     ),
 
-    findall(OpTeam ,standings(Conf,OpCard,_,OpTeam) ,Oponents),
+    findall(OpTeam ,standings(Conf,OpCard,_,OpTeam) ,Oponents),!,
 
     select(Home1,Oponents,Oponents1), 
     select(Home2,Oponents1,Oponents2),
     select(Visitor1,Oponents2,[Visitor2]),
     % Evitamos permutaciones entre partidos 1,2 y 3,4
-    Home1 @> Home2,
+    Home1    @> Home2,
     Visitor1 @> Visitor2,
 
     L = [[T,Visitor1],[T,Visitor2],[Home1,T],[Home2,T]].
 
-%% positional(L) :-
+intergames(T,L):-
+    standings(Conf,TArea,_,T),
+    (
+        Conf = afc
+    ->
+        OConf = nfc,
+        inter(TArea,OArea)
+    ;
+        Conf = nfc
+    ->
+        OConf = afc,
+        inter(TArea,OArea)
+    ),
+    findall(OpTeam ,standings(OConf,OArea,_,OpTeam) ,Oponents),!,
 
-%%     select(Area1,[north,east,west,south],RestOfFirst), % Pensando en que no se pueden repetir
-%%     select(Area2,RestOfFirst,_),
-%%     % Revisar que no esta ya en intragames
-
-%%     findall(FirstConfTeam,standings(Conf,Area1,Pos,FirstConfTeam),FstConfTms),
-%%     findall(SecondConfTm ,standings(Conf,Area2,Pos,SecondConfTm) ,SndConfTms),
-
-%%     select(Home1,FstConfTms,RestOfFirst), % Pensando en que no se pueden repetir
-%%     select(Home2,RestOfFirst,_),
+    select(Home1,Oponents,Oponents1), 
+    select(Home2,Oponents1,Oponents2),
+    select(Visitor1,Oponents2,[Visitor2]),
     
-%%     select(Visitor1,SndConfTms,RestOfSecond),
-%%     select(Visitor2,RestOfSecond,_),
+    Home1    @> Home2,
+    Visitor1 @> Visitor2,
 
-%%     L = [ [Home1,Visitor1],[Home2,Visitor2] ].    
+    L = [[T,Visitor1],[T,Visitor2],[Home1,T],[Home2,T]].
+
+finalgames(T,L):-
+    standings(Conf,Cord,Position,T),
+    (
+        intra(Cord,OpCord)
+    ; 
+        intra(OpCord,Cord)
+    ),
+
+    findall(OpTeam ,standings(Conf,_,Position,OpTeam) ,Oponents),!,
+
+    select(Home,Oponents,Oponents1),
+    standings(_,Cord1,_,Home), 
+    Cord   \= Cord1,
+    OpCord \= Cord1,
+    select(Visitor,Oponents1,_),
+    standings(_,Cord2,_,Visitor),
+    Cord   \= Cord2,
+    OpCord \= Cord2,
+
+    L = [[T,Visitor],[Home,T]].
 
 
 select_n([],[],[]).
