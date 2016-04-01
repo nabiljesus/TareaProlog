@@ -187,13 +187,11 @@ schedule :-
     make_structure(Matches),
     %% assign(Matches),
     findall(Team,standings(_,_,_,Team),Teams),!,
-    (
-        dynamic_assign(Matches,Teams,Teams),!
-    ;
-        retractall(played(X,Y))
-    ),
+
+    not_so_dynamic_assign(Matches,Teams,Teams,[]),
+
     check_schedule(Matches,B),
-    (schedule(1,Matches,B),!;true).
+    schedule(1,Matches,B).
 
 dynamic_assign([],Teams,Teams).
 dynamic_assign([[]|Weeks],Teams,Teams) :-
@@ -206,6 +204,18 @@ dynamic_assign([[Match1|RestOfWeek]|Weeks],Teams,Teams) :-
     Match1 = [Home,Visitor],
     dynamic_assign([RestOfWeek|Weeks],Teams,Teams).
 
+
+
+not_so_dynamic_assign([],Teams,Teams,Visited).
+not_so_dynamic_assign([[]|Weeks],Teams,Teams,Visited) :-
+    not_so_dynamic_assign(Weeks,Teams,Teams,Visited).
+not_so_dynamic_assign([[Match1|RestOfWeek]|Weeks],Teams,Teams,Visited) :-
+    member(Home,Teams),
+    member(Visitor,Teams),
+    Home \= Visitor,
+    \+ member([Home,Visitor],Visited),
+    Match1 = [Home,Visitor],
+    not_so_dynamic_assign([RestOfWeek|Weeks],Teams,Teams,[Match1|Visited]).
 
 check_schedule([],[]).
 check_schedule([M|Ms],[B|Bs]):-
