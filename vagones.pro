@@ -1,12 +1,12 @@
 % Solución para Reorganización de Trenes
 %
 %
-% @author López Javier
-% @author Márquez
+% @author López Javier 11-10552
+% @author Márquez      11-10683
 
-% Predicado para almacenar estados ya visitados
-% Cada estado almacenado es de la forma [ [base], [above], [below] ]
-retractall(padre(A,B)).
+% Predicado para almacenar las relaciones padres e hijos y la accion asociada.
+% De la forma [[ [base], [above], [below] ],acción]
+
 :- dynamic(father/2).
 father(inicial,inicial).
 
@@ -23,26 +23,31 @@ father(inicial,inicial).
 
 vagones(InitialState,FinalState,Movements):-
     nonvar(Movements),
+    retractall(padre(A,B)), %Limpio la memoria
     move_yaldra([InitialState,[],[]],
                 [FinalState,[],[]],
                 Movements,yes),!.
 vagones(InitialState,FinalState,Movements):-
-    find_vagones2([FinalState,[],[]],
+    bfs_vagones([FinalState,[],[]],
                   [[[inicial,none],[[InitialState,[],[]],exist]]],
                   []),
-    %length(First,Lf),
-    %smallest_list(First,Lf,AllMoves,Movements),
-    print('DADADA'),nl,
-    print(FinalState),
+    % Hallando acción asociada al padre.
     father(UFather,[[FinalState,[],[]],Fact]),
-    print(Fact),
     find_elder([[FinalState,[],[]],Fact],Path),
-    %print(AllMoves),nl,
-    print('DADADADA'),nl,
-    print(Path),
+    % Acciones
     reverse(Path,PathR),
+    % Impresión de las acciones
+    print(PathR),nl,
     vagones(InitialState,FinalState,PathR),!.
-    %retractall(visited(X)),!.
+
+%% find_elder(+Final:[State,Move],+Moves:list)
+%  
+% Predicado que dada una tupla de estado con su acción, 
+% encuentra los antecesores de estos para imprimir el camino
+% recorrido.
+% 
+% @param Final     Nodo buscado.
+% @param Moves     Path recorrido desde el nodo inicial al nodo buscado.
 
 find_elder([State,Move],[]):-
     father([inicial,none],[State,Move]).    
@@ -66,67 +71,42 @@ steps(N,M,[_|T]):-
     L is N+1,
     steps(L,M,T).
 
-%% find_vagones(+I:list,+F:list,?Mvs:list)
+%% bfs_vagones(+F:State,+Queue:[[State,Action]],+V:[State])
 %  
-% Predicado que visita el estado inicial I del problema de los vagones, 
-% revisa los posibles movimientos del tren y pasa al estado F agregando el 
-% movimiento realizado en Mvs. El predicado obtiene una demostración exitosa
-% cuando los estados Inicial y Final son iguales.
+% Predicado que busca el estado Final F desencolando desde la pila,
+% utilizando el reccorrido en arbol de BFS.
 % 
-% Inicial y final son de la forma [ [Base], [Above], [Below] ]
 %
-% @param I       Estado Inicial
-% @param F       Estado Final después del movimiento [Mv|Mvs]
-% @param Mvs     Lista de movimientos realizados, el primer movimiento a la 
-%                cabeza es el necesario para ir del estado I al F
+% @param F        Estado Buscado (Final)
+% @param Queue    Pila del BFS
+% @param V        Lista de estados visitados
 
-find_vagones2(F,_Queue,[F|_V]):- 
-                                    format('Toy en el caso final ~p',[F]), 
-                                    print(' Its over'),nl,!.
-find_vagones2(F,[[[Adad,AdAct],[A,Aact]]|Queue],V):-
-    print('VISITED'),nl,
+bfs_vagones(F,_Queue,[F|_V]):- !. %Al llegar al estado final, termina.
+bfs_vagones(F,[[[Adad,AdAct],[A,Aact]]|Queue],V):-
+    %Si está en visitados, backtracking.
     member(A,V),
-    find_vagones2(F,Queue,V).
-find_vagones2(F,[[[Adad,Adact],[A,Aact]]|Queue],V):-
-    %% \+ visited(I),
-    %% (
-    %%     assertz(visited(I))
-    %% ;
-    %%     retract(visited(I))
+    bfs_vagones(F,Queue,V).
+bfs_vagones(F,[[[Adad,Adact],[A,Aact]]|Queue],V):-
+    %Si no está en visitados
     \+ member(A,V),
+    %Agrega el hecho padre-hijo a la base de datos
     assertz(father([Adad,Adact],[A,Aact])),
-    print('Si Paso'),nl,
     %Busca las acciones posibles
     findall(Move,create_case(A,Move),Moves),
-    %Busca los hijos posible
+    %Busca los estados hijos posibles
     move_yaldra2(A,YaldraMoves,Moves,no),
-    %Busca todas las posibles relaciones A (Padre) con Hijo para tener un arbol por el cual hallar el camino
-    % de I a F luego.
+    %Empaqueta en una lista con el formato [estado,acción]
     zip(YaldraMoves,Moves,FMoves),
-    %print(FMoves),
+    %Arma la lista de todas las tuplas padre-hijo
     findall([[A,Aact],CFather],member(CFather,FMoves),FSList),
-    %add_parents(FSList,V),
-    %Concatenaciones
+    %Los Agrega a la pila y repite la busqueda
     append(Queue,FSList,NQueue),
-    find_vagones2(F,NQueue,[A|V]),
-    print('Me regreso una vez'),!.
+    bfs_vagones(F,NQueue,[A|V]),!.
 
 zip([],[],[]).
 zip([X|Xs],[Y|Ys],[[X,Y]|Rest]):-
     zip(Xs,Ys,Rest).
 
-unshift([],E):- false.
-unshift([L|LL],E):- L = E.
-
-add_parents([],V).
-add_parents([father(A,B)|Tups],V):-
-    member(B,[A|V]),
-    add_parents(Tups).
-add_parents([father(A,B)|Tups],V):-
-    \+ member(B,[A|V]),
-    print(father(A,B)),nl,
-    assertz(father(A,B)),
-    add_parents(Tups).
 
 %% move_yaldra(+Actual:list,+Final:list,+Mvs:list,?Print:atom)
 %  
@@ -146,6 +126,16 @@ move_yaldra(Actual,Final,[ M |Mvs],Print) :-
     once(Action),
     ( Print = yes -> print_yaldra(Actual,3) ; true),
     move_yaldra(NewActual,Final,Mvs,Print),!.
+
+%% move_yaldra2(+Actual:list,+Final:list,+Mvs:list,?Print:atom)
+%  
+% Analogamente a la anterior, solo aplica 1 movimiento de la lista
+% Mv al estado pasado y devuelve los distintos estados resultantes.
+%
+% @param A       Estado Actual
+% @param F       Estados Finales después de cada movimiento [Mv|Mvs]
+% @param Mv      Lista de movimientos.
+% @param Print   Indica si el recorrido debe ser impreso
 
 move_yaldra2(Final,[],[],yes):- print_yaldra(Final,3), !.
 move_yaldra2(Final,[],[],_)  :- !.
@@ -174,48 +164,6 @@ print_yaldra([Base,Above,Below],MaxWag) :-
     format("-- ~p ---+",[Base]),nl,
     atom_concat('~',N,X),atom_concat(X,'c',Z),format(Z,[32]),
     print('\\__ '), ( Below \= [] -> print(Below); true -> format("~7c",[95])),nl.
-
-% version ineficiente y fallida
-print_yaldra([Base,Above,Below]) :-
-    length(Base,BaseLen),
-    length(Above,AboveLen),
-    length(Below,BelowLen),
-    MaxY     is max(AboveLen,BelowLen),
-    AboveDif is (MaxY - AboveLen),
-    BelowLen is (MaxY - BelowLen),
-    Size     is BaseLen * 2 + 9 ,
-    print_n(Size,32),
-    print(' __'),
-    ( 
-        Above \= [] 
-    ->
-        print(1,32),
-        print(Above), %*2 -1+2+2
-        print(1,32)
-    ;
-        true
-    ),print(AboveDif,95),print(':'),nl,
-    print_n(Size,32),
-    print(/), nl,
-    format("-- ~p ---+",[Base]),nl,
-    print_n(Size,32),
-    print('\\__'), 
-    ( 
-        Below \= [] 
-    -> 
-        print(1,32),
-        print(Below),
-        print(1,32)
-    ;   
-        true
-    ),print(AboveDif,95),print(':'),nl.
-
-%print_n(0,_).
-print_n(Int,Char) :-
-    number_atom(Int,N), % -1+2+2+2+3+1
-    atom_concat('~',N,X),
-    atom_concat(X,'c',Z),
-    format(Z,[Char]).
 
 %% push(+Dir:atom,+N:int,+Init:list,?F:list)
 %  
