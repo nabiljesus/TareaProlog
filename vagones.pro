@@ -6,8 +6,8 @@
 
 % Predicado para almacenar estados ya visitados
 % Cada estado almacenado es de la forma [ [base], [above], [below] ]
-:- dynamic(visited/1).
-
+:- dynamic(padre/2).
+padre(inicial,inicial).
 
 %% vagones(+InitialState:list,+FinalState:list,?Movements:list)
 %  
@@ -32,7 +32,7 @@ vagones(InitialState,FinalState,Movements):-
     %length(First,Lf),
     %smallest_list(First,Lf,AllMoves,Movements),
     print('DADADA'),nl,
-    print(AllMoves),nl,
+    %print(AllMoves),nl,
     print('DADADADA'),nl.
     %retractall(visited(X)),!.
 
@@ -86,7 +86,9 @@ steps(N,M,[_|T]):-
 % @param Mvs     Lista de movimientos realizados, el primer movimiento a la 
 %                cabeza es el necesario para ir del estado I al F
 
-find_vagones2(Old,F,[F|Queue],_V).
+find_vagones2(Old,F,_Queue,[F|_V]):- assertz(padre(Old,F)),
+                                    format('Toy en el caso final ~p',[F]), 
+                                    print(' Its over'),nl,!.
 find_vagones2(Old,F,[A|Queue],V):-
     member(A,V),
     find_vagones2(Old,F,Queue,V).
@@ -100,7 +102,7 @@ find_vagones2(Old,F,[A|Queue],V):-
     %Busca las acciones posibles
     findall(Move,create_case(A,Move),Moves),
     %Busca los hijos posible
-    move_yaldra2(Actual,YaldraMoves,Moves,no),
+    move_yaldra2(A,YaldraMoves,Moves,no),
     print('Si Paso'),nl,
     %Busca todas las posibles relaciones A (Padre) con Hijo para tener un arbol por el cual hallar el camino
     % de I a F luego.
@@ -108,11 +110,7 @@ find_vagones2(Old,F,[A|Queue],V):-
     add_parents(FSList),
     %Concatenaciones
     append(Queue,YaldraMoves,NQueue),
-    find_vagones2(A,F,NQueue,[A|V]),
-    print(A),nl,
-    print(Moves),nl,
-    print(YaldraMoves),nl,
-    nl,print('Di end').
+    find_vagones2(A,F,NQueue,[A|V]),!.
 
 unshift([],E):- false.
 unshift([L|LL],E):- L = E.
@@ -148,7 +146,7 @@ move_yaldra2(Actual,[NewActual|Final],[ M |Mvs],Print) :-
     Action =.. [Move,Dir,Size,Actual,NewActual],
     once(Action),
     ( Print = yes -> print_yaldra(Actual,3) ; true),
-    move_yaldra2(NewActual,Final,Mvs,Print),!.
+    move_yaldra2(Actual,Final,Mvs,Print),!.
 
 %% move_yaldra(+Estado:list,+MaxWag:int)
 %  
