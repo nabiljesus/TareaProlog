@@ -341,16 +341,13 @@ sleepers_will_sleep([Match|Ms],[Tm1,Tm2,Tm3,Tm4]):-
     \+ member(Tm4,Match),
     sleepers_will_sleep(Ms,[Tm1,Tm2,Tm3,Tm4]).
 
-%% check_byes(+Matches:list,+Teams:list)
+%% needed_matches(+Teams:list,-Games:list)
 %  
-% Predicado que triunfa si ninguno de los equipos es miembro de los partidos de
-% Matches
+% Predicado que dado una lista de equipos, triunda si en Games aparecen los
+% juegos que podría necesitar cada equipo
 %
-% @param   Matches    juegos de una semana
-% @param   Teams      lista de equipos en descanso
-
-
-
+% @param   Teams    lista de equipos a recorrer
+% @param   Games    juegos necesarios para los equipos
 
 needed_matches([],[]).
 needed_matches([Tm|Tms], [FinalGames |
@@ -366,7 +363,15 @@ needed_matches([Tm|Tms], [FinalGames |
     needed_matches(Tms,TmsGames).
     %append(TmGames,TmsGames,Matches).
 
-% assignacion recursiva de partidos
+
+%% check_matches/0
+%% check_matches(+Calendar_structure)
+%  
+% Predicado que dado un calendar verifica si unifica con todos los juegos 
+% que requiere un equipo
+%
+% @param  Calendar_structure  calendario de juegos
+
 check_matches(Calendar_structure):-
     findall(Team,standings(_,_,_,Team),Teams),!,
     needed_matches(Teams,Matches),%!, % Los equipos y los juegos necesarios no cambiaran
@@ -374,18 +379,41 @@ check_matches(Calendar_structure):-
 
     % Se podria revisar aqui mismo los byes?
 
+%% check_matches/2
+%% check_matches(+Matches,+Calendar)
+%  
+% Predicado que triunfa si todos los partidos de Match aparecen en alguna 
+% de las listas de calendar
+%
+% @param  Calendar  calendario de juegos
+% @param  Matches   partidos requeridos
 
 check_matches([],Calendar):- ! .
 check_matches([Match|Ms],Calendar):-
     print('    checking_matches'),nl,
     big_member(Matches,Calendar_structure),
-    check_matches(Ms,Calendar),!.
+    check_matches(Ms,Calendar).
 
-% Es miembro de una semana, o de las siguientes
+%% big_member(+Game,+Weeks)
+%  
+% Implementación de member para listas de listas
+%
+% @param  Game   juego
+% @param  Weeks  calendario de juegos
+
 big_member(Game,[Week|_]):-
     member(Game,Week).
 big_member(Game,[_|Weeks]):-
     big_member(Game,Weeks).
+
+
+%% flatten(+L1:list,?L2:list)
+%  
+% Predicado que triunfa si la segunda lista es igual a la primera con un nivel
+% menor de anidamiento.
+%
+% @param  L1   Lista de entrada
+% @param  L2   Lista de salida
 
 flatten([],[]).
 flatten([[[A,B],[C,D]]|Elements],[[A,B],[C,D]|Flatted]):-
