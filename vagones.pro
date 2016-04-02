@@ -100,7 +100,7 @@ find_vagones2(Old,F,[A|Queue],V):-
     %Busca las acciones posibles
     findall(Move,create_case(A,Move),Moves),
     %Busca los hijos posible
-    move_yaldra2(Actual,YaldraMoves,Moves,no),
+    move_yaldra2(A,YaldraMoves,Moves,yes),
     print('Si Paso'),nl,
     %Busca todas las posibles relaciones A (Padre) con Hijo para tener un arbol por el cual hallar el camino
     % de I a F luego.
@@ -144,11 +144,12 @@ move_yaldra(Actual,Final,[ M |Mvs],Print) :-
 move_yaldra2(Final,[],[],yes):- print_yaldra(Final,3), !.
 move_yaldra2(Final,[],[],_)  :- !.
 move_yaldra2(Actual,[NewActual|Final],[ M |Mvs],Print) :-
+   print('TOy en yalda'),
     M      =.. [Move,Dir,Size],
     Action =.. [Move,Dir,Size,Actual,NewActual],
     once(Action),
     ( Print = yes -> print_yaldra(Actual,3) ; true),
-    move_yaldra2(NewActual,Final,Mvs,Print),!.
+    move_yaldra2(Actual,Final,Mvs,Print),!.
 
 %% move_yaldra(+Estado:list,+MaxWag:int)
 %  

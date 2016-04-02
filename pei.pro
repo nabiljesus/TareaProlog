@@ -4,11 +4,25 @@
 % @author López Javier
 % @author NMárquez Nabil
 
-% Predicados que triunfan si N es par o impar, respectivamente.
+
+%% even(+N:atom)
+%  
+% Predicado que, dado un entero N, triunfa si N es par.
+% 
+% @param N        atomo que indica cual es numero a consultar.
 even(N):- 0 is N mod 2.
+
+%% odd(+N:atom)
+%  
+% Predicado que, dado un entero N, triunfa si N es impar.
+% 
+% @param N        atomo que indica cual es numero a consultar.
 odd(N):- \+ even(N).
 
-
+%% pei()
+%  
+% Predicado que resuelve el problema de la multiplicación propuesta.
+% 
 pei :-
         % Generar una posible solución
         XI = [I0],
@@ -82,7 +96,13 @@ pei :-
         write(' ------'), nl,
         format(' ~p',[IIPP]), nl.
 
-%Predicado que tiene éxito si no quedan elementos restantes por asignar.
+
+%% assign_digits(+D:list,+List:list)
+%  
+% Predicado que tiene éxito si no quedan elementos restantes por asignar.
+% 
+% @param D        lista de variables a signar
+% @param List     lista de posbiles valores
 assign_digits([], _List).
 assign_digits([D|Ds], List):-
         select(D, List, Restantes), %Obvia restantes para permitir duplicados. 
