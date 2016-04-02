@@ -40,11 +40,11 @@ vagones(InitialState,FinalState,Movements):-
     %print(AllMoves),nl,
     print('DADADADA'),nl,
     print(Path),
-    vagones(InitialState,FinalState,Path).
+    reverse(Path,PathR),
+    vagones(InitialState,FinalState,PathR),!.
     %retractall(visited(X)),!.
 
-
-find_elder([State,Move],[Move]):-
+find_elder([State,Move],[]):-
     father([inicial,none],[State,Move]).    
 find_elder([State,Move],[Move|NextMove]):-
     father(Parent,[State,Move]),
