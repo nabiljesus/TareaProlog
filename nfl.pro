@@ -265,9 +265,25 @@ schedule :-
     byes(B,Teams),
     make_structure(Matches),
     assign_random_matches(Matches,Teams,[]),
+    print('probando'),nl,
     check_matches(Matches),
     check_byes(Matches,B),
     schedule(1,Matches,B).
+schedule(N,[],[]):- ! .
+schedule(N,[Week|Weeks],[]):-
+    format('WEEK ~p',[N]),nl,
+    print( '------'),nl,
+    week_print(Week),nl,
+    N1 is N+1,
+    schedule(N1,Weeks,NextByes),!.
+schedule(N,[Week|Weeks],[Byes|NextByes]):-
+    format('WEEK ~p',[N]),nl,
+    print( '------'),nl,
+    week_print(Week),nl,
+    print('Byes: '),
+    byes_print(Byes),nl,
+    N1 is N+1,
+    schedule(N1,Weeks,NextByes),!.
 
 %% assign_random_matches(+Calendar:list,+Teams:list,+Visited:list)
 %  
@@ -291,43 +307,48 @@ assign_random_matches([[Match1|RestOfWeek]|Weeks],Teams,Visited) :-
     assign_random_matches([RestOfWeek|Weeks],Teams,[Match1|Visited]).
 
 
-%% check_byes(+Calendar:list,+Teams:list,+Visited:list)
+%% check_byes(+Weeks:list,+Byes:list)
 %  
-% Predicado que triunfa cuando todos los juegos de Calendar unifican con 
-% algun partidos, estos partidos no se repiten y deben estar conpuestos de
-% dos equipos diferentes. 
+% Predicado que triunfa cuando los equipos que descansan en Byes, no juegan
+% en sus respectivas semanas
 %
-% @param   Calendar     estructura de un calendario
-% @param   Teams        lista con todos los equipos
-% @param   Visted       lista con los partido ya agregados
-check_byes([],[]).
-check_byes([M|Ms],[B|Bs]):-
-    sleepers_will_sleep(M,B),
-    check_byes(Ms,Bs).
+% @param   Weeks     calendario
+% @param   Byes      lista de byes
 
-sleepers_will_sleep([],[Tm1,Tm2,Tm3,Tm4]).
+check_byes([],[]):-!.
+check_byes(_M,[]):-!.
+check_byes([Week|Weeks],[B|Bs]):-
+    !,
+    print('    checking_byes'),nl,
+    sleepers_will_sleep(Week,B),
+    check_byes(Weeks,Bs).
+
+
+%% sleepers_will_sleep(+Matches:list,+Teams:list)
+%  
+% Predicado que triunfa si ninguno de los equipos es miembro de los partidos de
+% Matches
+%
+% @param   Matches    juegos de una semana
+% @param   Teams      lista de equipos en descanso
+
+sleepers_will_sleep([],_).
 sleepers_will_sleep([Match|Ms],[Tm1,Tm2,Tm3,Tm4]):-
+    %% print('        sleepers_will_sleep'),nl,
     \+ member(Tm1,Match),
     \+ member(Tm2,Match),
     \+ member(Tm3,Match),
     \+ member(Tm4,Match),
     sleepers_will_sleep(Ms,[Tm1,Tm2,Tm3,Tm4]).
 
-schedule(N,[],[]):- ! .
-schedule(N,[Week|Weeks],[]):-
-    format('WEEK ~p',[N]),nl,
-    print( '------'),nl,
-    week_print(Week),nl,
-    N1 is N+1,
-    schedule(N1,Weeks,NextByes),!.
-schedule(N,[Week|Weeks],[Byes|NextByes]):-
-    format('WEEK ~p',[N]),nl,
-    print( '------'),nl,
-    week_print(Week),nl,
-    print('Byes: '),
-    byes_print(Byes),nl,
-    N1 is N+1,
-    schedule(N1,Weeks,NextByes),!.
+%% check_byes(+Matches:list,+Teams:list)
+%  
+% Predicado que triunfa si ninguno de los equipos es miembro de los partidos de
+% Matches
+%
+% @param   Matches    juegos de una semana
+% @param   Teams      lista de equipos en descanso
+
 
 
 
@@ -354,10 +375,11 @@ check_matches(Calendar_structure):-
     % Se podria revisar aqui mismo los byes?
 
 
-check_matches([],Calendar).
+check_matches([],Calendar):- ! .
 check_matches([Match|Ms],Calendar):-
+    print('    checking_matches'),nl,
     big_member(Matches,Calendar_structure),
-    check_matches(Ms,Calendar).
+    check_matches(Ms,Calendar),!.
 
 % Es miembro de una semana, o de las siguientes
 big_member(Game,[Week|_]):-
