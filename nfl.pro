@@ -265,10 +265,11 @@ schedule :-
     byes(B,Teams),
     make_structure(Matches),
     assign_random_matches(Matches,Teams,[]),
+    print('probando caso'),nl,
     check_matches(Matches),
-    % El checkeo de byes no permite que se prueben otros casos
-    %check_byes(Matches,B), 
+    %% check_byes(Matches,B), % El checkeo de byes no permite que se prueben otros casos
     schedule(1,Matches,B).
+
 schedule(N,[],[]):- ! .
 schedule(N,[Week|Weeks],[]):-
     format('WEEK ~p',[N]),nl,
@@ -295,16 +296,32 @@ schedule(N,[Week|Weeks],[Byes|NextByes]):-
 % @param   Teams        lista con todos los equipos
 % @param   Visted       lista con los partido ya agregados
 
-assign_random_matches([],Teams,Visited).
-assign_random_matches([[]|Weeks],Teams,Visited) :-
-    assign_random_matches(Weeks,Teams,Visited).
-assign_random_matches([[Match1|RestOfWeek]|Weeks],Teams,Visited) :-
+assign_random_matches([],Teams,Visited,Byes).
+assign_random_matches([[]|Weeks],Teams,Visited,Byes) :-
+    (
+        Byes = [WeekByes|Xs] 
+    ->
+        assign_random_matches(Weeks,Teams,Visited,Xs)
+    ;
+        Byes = []
+    ->
+        assign_random_matches(Weeks,Teams,Visited,[])
+    ).
+assign_random_matches([[Match1|RestOfWeek]|Weeks],Teams,Visited,Byes) :-
     member(Home,Teams),
     member(Visitor,Teams),
     Home \= Visitor,
     \+ member([Home,Visitor],Visited),
+    (
+        Byes = [WeekByes|Xs] 
+    ->
+        \+ member(Home,WeekByes),
+        \+ member(Visitor,WeekByes)
+    ;
+        Byes = []
+    ),
     Match1 = [Home,Visitor],
-    assign_random_matches([RestOfWeek|Weeks],Teams,[Match1|Visited]).
+    assign_random_matches([RestOfWeek|Weeks],Teams,[Match1|Visited],Byes).
 
 
 %% check_byes(+Weeks:list,+Byes:list)
@@ -315,12 +332,12 @@ assign_random_matches([[Match1|RestOfWeek]|Weeks],Teams,Visited) :-
 % @param   Weeks     calendario
 % @param   Byes      lista de byes
 
-check_byes([],[]):-!.
-check_byes(_M,[]):-!.
-check_byes([Week|Weeks],[B|Bs]):-
-    !,
-    sleepers_will_sleep(Week,B),
-    check_byes(Weeks,Bs),!.
+check_byes(_M,[]):-print('final').
+check_byes([Week|Weeks],[B|Bs]):- 
+    %% length(Weeks,L),
+    %% print(L),nl,
+    sleepers_will_sleep(Week,B),!,
+    check_byes(Weeks,Bs).
 
 
 %% sleepers_will_sleep(+Matches:list,+Teams:list)
@@ -331,8 +348,8 @@ check_byes([Week|Weeks],[B|Bs]):-
 % @param   Matches    juegos de una semana
 % @param   Teams      lista de equipos en descanso
 
-sleepers_will_sleep([],_):- !.
-sleepers_will_sleep([Match|Ms],[Tm1,Tm2,Tm3,Tm4]):-
+sleepers_will_sleep([],_):-  !.
+sleepers_will_sleep([Match|Ms],[Tm1,Tm2,Tm3,Tm4]):- !,
     \+ member(Tm1,Match),
     \+ member(Tm2,Match),
     \+ member(Tm3,Match),
