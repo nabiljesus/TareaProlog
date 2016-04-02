@@ -264,10 +264,8 @@ schedule :-
     findall(Team,standings(_,_,_,Team),Teams),!,
     byes(B,Teams),
     make_structure(Matches),
-    assign_random_matches(Matches,Teams,[]),
-    print('probando caso'),nl,
+    assign_random_matches(Matches,Teams,B),
     check_matches(Matches),
-    %% check_byes(Matches,B), % El checkeo de byes no permite que se prueben otros casos
     schedule(1,Matches,B).
 
 schedule(N,[],[]):- ! .
@@ -289,8 +287,8 @@ schedule(N,[Week|Weeks],[Byes|NextByes]):-
 %% assign_random_matches(+Calendar:list,+Teams:list,+Visited:list)
 %  
 % Predicado que triunfa cuando todos los juegos de Calendar unifican con 
-% algun partidos, estos partidos no se repiten y deben estar conpuestos de
-% dos equipos diferentes. 
+% algun partidos, estos partidos no se repiten, deben estar conpuestos de
+% dos equipos diferentes y no utiliza equipos que se encuentren descansando
 %
 % @param   Calendar     estructura de un calendario
 % @param   Teams        lista con todos los equipos
@@ -327,15 +325,15 @@ assign_random_matches([[Match1|RestOfWeek]|Weeks],Teams,Visited,Byes) :-
 %% check_byes(+Weeks:list,+Byes:list)
 %  
 % Predicado que triunfa cuando los equipos que descansan en Byes, no juegan
-% en sus respectivas semanas
+% en sus respectivas semanas. 
+% PREDICADO NO UTILIZADO, su cálculo es muy costoso, por lo que se decidió
+% tomar en cuenta los byes al momento de generar un calendario
 %
 % @param   Weeks     calendario
 % @param   Byes      lista de byes
 
 check_byes(_M,[]):-print('final').
 check_byes([Week|Weeks],[B|Bs]):- 
-    %% length(Weeks,L),
-    %% print(L),nl,
     sleepers_will_sleep(Week,B),!,
     check_byes(Weeks,Bs).
 
@@ -344,6 +342,8 @@ check_byes([Week|Weeks],[B|Bs]):-
 %  
 % Predicado que triunfa si ninguno de los equipos es miembro de los partidos de
 % Matches
+% PREDICADO NO UTILIZADO, su cálculo es muy costoso, por lo que se decidió
+% tomar en cuenta los byes al momento de generar un calendario
 %
 % @param   Matches    juegos de una semana
 % @param   Teams      lista de equipos en descanso
