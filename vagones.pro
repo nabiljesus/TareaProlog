@@ -6,8 +6,9 @@
 
 % Predicado para almacenar estados ya visitados
 % Cada estado almacenado es de la forma [ [base], [above], [below] ]
-:- dynamic(padre/2).
-padre(inicial,inicial).
+retractall(padre(A,B)).
+:- dynamic(father/2).
+father(inicial,inicial).
 
 %% vagones(+InitialState:list,+FinalState:list,?Movements:list)
 %  
@@ -86,7 +87,7 @@ steps(N,M,[_|T]):-
 % @param Mvs     Lista de movimientos realizados, el primer movimiento a la 
 %                cabeza es el necesario para ir del estado I al F
 
-find_vagones2(Old,F,_Queue,[F|_V]):- assertz(padre(Old,F)),
+find_vagones2(Old,F,_Queue,[F|_V]):- assertz(father(Old,F)),
                                     format('Toy en el caso final ~p',[F]), 
                                     print(' Its over'),nl,!.
 find_vagones2(Old,F,[A|Queue],V):-
@@ -103,21 +104,24 @@ find_vagones2(Old,F,[A|Queue],V):-
     findall(Move,create_case(A,Move),Moves),
     %Busca los hijos posible
     move_yaldra2(A,YaldraMoves,Moves,no),
-    print('Si Paso'),nl,
     %Busca todas las posibles relaciones A (Padre) con Hijo para tener un arbol por el cual hallar el camino
     % de I a F luego.
     findall(father(A,CFather),member(CFather,YaldraMoves),FSList),
-    add_parents(FSList),
+    add_parents(FSList,V),
+    print('Si Paso'),nl,
     %Concatenaciones
     append(Queue,YaldraMoves,NQueue),
-    find_vagones2(A,F,NQueue,[A|V]),!.
+    find_vagones2(A,F,NQueue,[A|V]),
+    print('Me regreso una vez'),!.
 
 unshift([],E):- false.
 unshift([L|LL],E):- L = E.
 
-add_parents([]).
-add_parents([Tup|Tups]):-
-    assertz(Tup),
+add_parents([],V).
+add_parents([father(A,B)|Tups],V):-
+    \+ member(B,[A|V]),
+    print(father(A,B)),nl,
+    assertz(father(A,B)),
     add_parents(Tups).
 
 %% move_yaldra(+Actual:list,+Final:list,+Mvs:list,?Print:atom)
