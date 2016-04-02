@@ -26,7 +26,7 @@ vagones(InitialState,FinalState,Movements):-
                 [FinalState,[],[]],
                 Movements,yes),!.
 vagones(InitialState,FinalState,Movements):-
-    find_vagones2([FinalState,[],[]],
+    find_vagones2([InitialState,[],[]],[FinalState,[],[]],
                   [[InitialState,[],[]]],
                   [],
                   [],
@@ -88,19 +88,32 @@ steps(N,M,[_|T]):-
 % @param Mvs     Lista de movimientos realizados, el primer movimiento a la 
 %                cabeza es el necesario para ir del estado I al F
 
-find_vagones2(F,[F|Queue],_V,TFS,FS):- TFS = FS.
-find_vagones2(F,[A|Queue],V,TFS,FS):-
+find_vagones2(Old,F,[F|Queue],_V,TFS,FS):- [[Old,F]|TFS] = FS.
+find_vagones2(Old,F,[A|Queue],V,TFS,FS):-
     member(A,V),
-    find_vagones2(F,Queue,V,TFS,FS).
-find_vagones2(F,[A|Queue],V,TFS,FS):-
+    find_vagones2(Old,F,Queue,V,TFS,FS).
+find_vagones2(Old,F,[A|Queue],V,TFS,FS):-
     %% \+ visited(I),
     %% (
     %%     assertz(visited(I))
     %% ;
     %%     retract(visited(I))
     \+ member(A,V),
+    %Busca las acciones posibles
     findall(Move,create_case(A,Move),Moves),
-    print(Moves),
+    %Busca los hijos posible
+    move_yaldra2(Actual,YaldraMoves,Moves,no),
+    %Busca todas las posibles relaciones A (Padre) con Hijo para tener un arbol por el cual hallar el camino
+    % de I a F luego.
+    findall([A,CFather],member(CFather,YaldraMoves),FSList),
+    %Concatenaciones
+    append(FSList,TFS,NTFS),
+    append(Queue,YaldraMoves,NQueue),
+    find_vagones2(A,F,Queue,NQueue,NTFS,FS),
+    print(A),nl,
+    print(Moves),nl,
+    print(YaldraMoves),nl,
+    print(FSList),nl,
     nl,print('Di end').
 
 unshift([],E):- false.
