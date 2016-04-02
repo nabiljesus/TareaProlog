@@ -28,7 +28,7 @@ vagones(InitialState,FinalState,Movements):-
                 Movements,yes),!.
 vagones(InitialState,FinalState,Movements):-
     find_vagones2([InitialState,[],[]],[FinalState,[],[]],
-                  [[InitialState,[],[]]],
+                  [[(inicial,none),([InitialState,[],[]],none)]],
                   []),
     %length(First,Lf),
     %smallest_list(First,Lf,AllMoves,Movements),
@@ -87,37 +87,46 @@ steps(N,M,[_|T]):-
 % @param Mvs     Lista de movimientos realizados, el primer movimiento a la 
 %                cabeza es el necesario para ir del estado I al F
 
-find_vagones2(Old,F,_Queue,[F|_V]):- assertz(father(Old,F)),
+find_vagones2(Old,F,_Queue,[F|_V]):- 
                                     format('Toy en el caso final ~p',[F]), 
                                     print(' Its over'),nl,!.
-find_vagones2(Old,F,[A|Queue],V):-
+find_vagones2(Old,F,[[(Adad,AdAct),(A,Aact)]|Queue],V):-
     member(A,V),
     find_vagones2(Old,F,Queue,V).
-find_vagones2(Old,F,[A|Queue],V):-
+find_vagones2(Old,F,[[(Adad,AdAct),(A,Aact)]|Queue],V):-
     %% \+ visited(I),
     %% (
     %%     assertz(visited(I))
     %% ;
     %%     retract(visited(I))
     \+ member(A,V),
+    assertz(father(Adad,A)),
     %Busca las acciones posibles
     findall(Move,create_case(A,Move),Moves),
     %Busca los hijos posible
     move_yaldra2(A,YaldraMoves,Moves,no),
     %Busca todas las posibles relaciones A (Padre) con Hijo para tener un arbol por el cual hallar el camino
     % de I a F luego.
-    findall(father(A,CFather),member(CFather,YaldraMoves),FSList),
-    add_parents(FSList,V),
+    zip(YaldraMoves,Moves,FMoves),
+    findall([A,CFather],member(CFather,FMoves),FSList),
+    %add_parents(FSList,V),
     print('Si Paso'),nl,
     %Concatenaciones
-    append(Queue,YaldraMoves,NQueue),
+    append(Queue,FSList,NQueue),
     find_vagones2(A,F,NQueue,[A|V]),
     print('Me regreso una vez'),!.
+
+zip([],[],[]).
+zip([X|Xs],[Y|Ys],[[X,Y]|Rest]):-
+    zip(Xs,Ys,Rest).
 
 unshift([],E):- false.
 unshift([L|LL],E):- L = E.
 
 add_parents([],V).
+add_parents([father(A,B)|Tups],V):-
+    member(B,[A|V]),
+    add_parents(Tups).
 add_parents([father(A,B)|Tups],V):-
     \+ member(B,[A|V]),
     print(father(A,B)),nl,
