@@ -27,36 +27,29 @@ vagones(InitialState,FinalState,Movements):-
                 [FinalState,[],[]],
                 Movements,yes),!.
 vagones(InitialState,FinalState,Movements):-
-    find_vagones2([InitialState,[],[]],[FinalState,[],[]],
-                  [[(inicial,none),([InitialState,[],[]],none)]],
+    find_vagones2([FinalState,[],[]],
+                  [[[inicial,none],[[InitialState,[],[]],exist]]],
                   []),
     %length(First,Lf),
     %smallest_list(First,Lf,AllMoves,Movements),
     print('DADADA'),nl,
+    print(FinalState),
+    father(UFather,[[FinalState,[],[]],Fact]),
+    print(Fact),
+    find_elder([[FinalState,[],[]],Fact],Path),
     %print(AllMoves),nl,
-    print('DADADADA'),nl.
+    print('DADADADA'),nl,
+    print(Path),
+    vagones(InitialState,FinalState,Path).
     %retractall(visited(X)),!.
 
-%% smallest_list(+Small:list,+SmallSize:int,+Iterable:list,?Smallest:list)
-%  
-% Predicado que dada una lista de listas, su primer elemento y tamaño, entrega
-% la más pequeña de todas las listas
-% 
-% @param Small        elemento más pequeño encontrado hasta el momento
-% @param SmallSize    tamaño de small para evitar se recalculado en cada paso
-% @param Iterable     lista de listas a recorrer
-% @param Smallest     lista más pequeña de Iterable
 
-smallest_list(Smallest,_,[],Smallest).
-smallest_list(Sm,Size,[Next|Tl],Ns):-
-    length(Next,Nl),
-    (
-        Nl >= Size 
-    ->
-        smallest_list(Sm,Size,Tl,Ns)
-    ;
-        smallest_list(Next,Nl,Tl,Ns)
-    ),!.
+find_elder([State,Move],[Move]):-
+    father([inicial,none],[State,Move]).    
+find_elder([State,Move],[Move|NextMove]):-
+    father(Parent,[State,Move]),
+    Parent \= inicial,
+    find_elder(Parent,NextMove).
 
 %% steps(?Number:int,+List:list)
 %  
@@ -87,20 +80,22 @@ steps(N,M,[_|T]):-
 % @param Mvs     Lista de movimientos realizados, el primer movimiento a la 
 %                cabeza es el necesario para ir del estado I al F
 
-find_vagones2(Old,F,_Queue,[F|_V]):- 
+find_vagones2(F,_Queue,[F|_V]):- 
                                     format('Toy en el caso final ~p',[F]), 
                                     print(' Its over'),nl,!.
-find_vagones2(Old,F,[[(Adad,AdAct),(A,Aact)]|Queue],V):-
+find_vagones2(F,[[[Adad,AdAct],[A,Aact]]|Queue],V):-
+    print('VISITED'),nl,
     member(A,V),
-    find_vagones2(Old,F,Queue,V).
-find_vagones2(Old,F,[[(Adad,AdAct),(A,Aact)]|Queue],V):-
+    find_vagones2(F,Queue,V).
+find_vagones2(F,[[[Adad,Adact],[A,Aact]]|Queue],V):-
     %% \+ visited(I),
     %% (
     %%     assertz(visited(I))
     %% ;
     %%     retract(visited(I))
     \+ member(A,V),
-    assertz(father(Adad,A)),
+    assertz(father([Adad,Adact],[A,Aact])),
+    print('Si Paso'),nl,
     %Busca las acciones posibles
     findall(Move,create_case(A,Move),Moves),
     %Busca los hijos posible
@@ -108,12 +103,12 @@ find_vagones2(Old,F,[[(Adad,AdAct),(A,Aact)]|Queue],V):-
     %Busca todas las posibles relaciones A (Padre) con Hijo para tener un arbol por el cual hallar el camino
     % de I a F luego.
     zip(YaldraMoves,Moves,FMoves),
-    findall([A,CFather],member(CFather,FMoves),FSList),
+    %print(FMoves),
+    findall([[A,Aact],CFather],member(CFather,FMoves),FSList),
     %add_parents(FSList,V),
-    print('Si Paso'),nl,
     %Concatenaciones
     append(Queue,FSList,NQueue),
-    find_vagones2(A,F,NQueue,[A|V]),
+    find_vagones2(F,NQueue,[A|V]),
     print('Me regreso una vez'),!.
 
 zip([],[],[]).
