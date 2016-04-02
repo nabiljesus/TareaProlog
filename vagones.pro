@@ -125,6 +125,15 @@ move_yaldra(Actual,Final,[ M |Mvs],Print) :-
     ( Print = yes -> print_yaldra(Actual,3) ; true),
     move_yaldra(NewActual,Final,Mvs,Print),!.
 
+move_yaldra2(Final,[],[],yes):- print_yaldra(Final,3), !.
+move_yaldra2(Final,[],[],_)  :- !.
+move_yaldra2(Actual,[NewActual|Final],[ M |Mvs],Print) :-
+    M      =.. [Move,Dir,Size],
+    Action =.. [Move,Dir,Size,Actual,NewActual],
+    once(Action),
+    ( Print = yes -> print_yaldra(Actual,3) ; true),
+    move_yaldra2(NewActual,Final,Mvs,Print),!.
+
 %% move_yaldra(+Estado:list,+MaxWag:int)
 %  
 % Predicado que imprime Estado en un formato espec`ifico, en donde
