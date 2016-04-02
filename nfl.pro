@@ -265,9 +265,9 @@ schedule :-
     byes(B,Teams),
     make_structure(Matches),
     assign_random_matches(Matches,Teams,[]),
-    print('probando'),nl,
     check_matches(Matches),
-    check_byes(Matches,B),
+    % El checkeo de byes no permite que se prueben otros casos
+    %check_byes(Matches,B), 
     schedule(1,Matches,B).
 schedule(N,[],[]):- ! .
 schedule(N,[Week|Weeks],[]):-
@@ -319,9 +319,8 @@ check_byes([],[]):-!.
 check_byes(_M,[]):-!.
 check_byes([Week|Weeks],[B|Bs]):-
     !,
-    print('    checking_byes'),nl,
     sleepers_will_sleep(Week,B),
-    check_byes(Weeks,Bs).
+    check_byes(Weeks,Bs),!.
 
 
 %% sleepers_will_sleep(+Matches:list,+Teams:list)
@@ -332,14 +331,13 @@ check_byes([Week|Weeks],[B|Bs]):-
 % @param   Matches    juegos de una semana
 % @param   Teams      lista de equipos en descanso
 
-sleepers_will_sleep([],_).
+sleepers_will_sleep([],_):- !.
 sleepers_will_sleep([Match|Ms],[Tm1,Tm2,Tm3,Tm4]):-
-    %% print('        sleepers_will_sleep'),nl,
     \+ member(Tm1,Match),
     \+ member(Tm2,Match),
     \+ member(Tm3,Match),
     \+ member(Tm4,Match),
-    sleepers_will_sleep(Ms,[Tm1,Tm2,Tm3,Tm4]).
+    sleepers_will_sleep(Ms,[Tm1,Tm2,Tm3,Tm4]),!.
 
 %% needed_matches(+Teams:list,-Games:list)
 %  
@@ -361,7 +359,6 @@ needed_matches([Tm|Tms], [FinalGames |
     intergames(Tm,InterGames),
     finalgames(Tm,FinalGames),
     needed_matches(Tms,TmsGames).
-    %append(TmGames,TmsGames,Matches).
 
 
 %% check_matches/0
@@ -374,10 +371,9 @@ needed_matches([Tm|Tms], [FinalGames |
 
 check_matches(Calendar_structure):-
     findall(Team,standings(_,_,_,Team),Teams),!,
-    needed_matches(Teams,Matches),%!, % Los equipos y los juegos necesarios no cambiaran
+    needed_matches(Teams,Matches),
     check_matches(Matches,Calendar_structure).
 
-    % Se podria revisar aqui mismo los byes?
 
 %% check_matches/2
 %% check_matches(+Matches,+Calendar)
@@ -390,7 +386,6 @@ check_matches(Calendar_structure):-
 
 check_matches([],Calendar):- ! .
 check_matches([Match|Ms],Calendar):-
-    print('    checking_matches'),nl,
     big_member(Matches,Calendar_structure),
     check_matches(Ms,Calendar).
 
