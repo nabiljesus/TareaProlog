@@ -26,15 +26,13 @@ vagones(InitialState,FinalState,Movements):-
                 [FinalState,[],[]],
                 Movements,yes),!.
 vagones(InitialState,FinalState,Movements):-
-    findall(Moves,
-            find_vagones2([InitialState,[],[]],
-                        [FinalState,[],[]],
-                        Moves,
-                        [],
-                        []),
-            [First|AllMoves]),
-    length(First,Lf),
-    smallest_list(First,Lf,AllMoves,Movements),
+    find_vagones2([FinalState,[],[]],
+                  [[InitialState,[],[]]],
+                  [],
+                  [],
+                  FS),
+    %length(First,Lf),
+    %smallest_list(First,Lf,AllMoves,Movements),
     print('DADADA'),nl,
     print(AllMoves),nl,
     print('DADADADA'),nl.
@@ -90,54 +88,20 @@ steps(N,M,[_|T]):-
 % @param Mvs     Lista de movimientos realizados, el primer movimiento a la 
 %                cabeza es el necesario para ir del estado I al F
 
-find_vagones(I,I,[],_V).
-find_vagones(I,F,[M|Mv],V):-
+find_vagones2(F,[F|Queue],_V,TFS,FS):- TFS = FS.
+find_vagones2(F,[A|Queue],V,TFS,FS):-
+    member(A,V),
+    find_vagones2(F,Queue,V,TFS,FS).
+find_vagones2(F,[A|Queue],V,TFS,FS):-
     %% \+ visited(I),
     %% (
     %%     assertz(visited(I))
     %% ;
     %%     retract(visited(I))
-    %% ),
-    print('Desde: '),
-    print(I), nl,
-    (   member(I,V)
-
-        ->
-        print('BACKTRACKING, BIACH.')
-        ;
-        true
-        ),
-    \+ member(I,V),nl,
-    create_case(I,M),
-    move_yaldra(I,Actual,[M],no),
-    print('Voy A :'),
-    print(M), nl,
-    find_vagones(Actual,F,Mv,[I|V]).
-
-find_vagones2(I,I,[I|Mv],_V,Queue).
-find_vagones2(I,F,[M|Mv],V,Queue):-
-    %% \+ visited(I),
-    %% (
-    %%     assertz(visited(I))
-    %% ;
-    %%     retract(visited(I))
-
-    print('Desde: '),
-    print(I), nl,
-    (   member(I,V)
-
-        ->
-        print('BACKTRACKING, BIACH.')
-        ;
-        true
-        ),
-    \+ member(I,V),nl,
-    create_case(I,M),
-    move_yaldra(I,Actual,[M],no),
-    print('Voy A :'),
-    print(M), nl,
-    print(I), nl,
-    find_vagones2(Actual,F,Mv,[I|V]).
+    \+ member(A,V),
+    findall(Move,create_case(A,Move),Moves),
+    print(Moves),
+    nl,print('Di end').
 
 unshift([],E):- false.
 unshift([L|LL],E):- L = E.
